@@ -334,6 +334,7 @@ if EMMAKEN_CFLAGS: CC_ADDITIONAL_ARGS += shlex.split(EMMAKEN_CFLAGS)
 # ---------------- Utilities ---------------
 
 SOURCE_SUFFIXES = ('.c', '.cpp', '.cxx', '.cc')
+HEADER_SUFFIXES = ('.h', '.hpp', '.hxx')
 BITCODE_SUFFIXES = ('.bc', '.o', '.obj')
 DYNAMICLIB_SUFFIXES = ('.dylib', '.so', '.dll')
 STATICLIB_SUFFIXES = ('.a',)
@@ -382,7 +383,7 @@ for i in range(len(sys.argv)-1):
     sys.argv = sys.argv[:i] + sys.argv[i+2:]
     break
 
-if header: # header or such
+if header and not '-E' in sys.argv: # header or such
   if len(sys.argv) >= 3: # if there is a source and a target, then copy, otherwise do nothing
     sys.argv = filter(lambda arg: not arg.startswith('-I'), sys.argv)
     if DEBUG: print >> sys.stderr, 'Just copy:', sys.argv[-1], target
@@ -513,6 +514,9 @@ try:
     elif newargs[i] == '--remove-duplicates':
       remove_duplicates = True
       newargs[i] = ''
+    elif newargs[i] == '-E':
+      # Preprocess
+      SOURCE_SUFFIXES += HEADER_SUFFIXES
   newargs = [ arg for arg in newargs if arg is not '' ]
 
   if llvm_opts is None: llvm_opts = LLVM_OPT_LEVEL[opt_level]
@@ -556,7 +560,7 @@ try:
     if arg.endswith(SOURCE_SUFFIXES + BITCODE_SUFFIXES + DYNAMICLIB_SUFFIXES + ASSEMBLY_SUFFIXES) or shared.Building.is_ar(arg): # we already removed -o <target>, so all these should be inputs
       newargs[i] = ''
       if os.path.exists(arg):
-        if arg.endswith(SOURCE_SUFFIXES):
+        if arg.endswith(SOURCE_SUFFIXES) or '-E' in sys.argv:
           input_files.append(arg)
           has_source_inputs = True
         else:

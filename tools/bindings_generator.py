@@ -238,6 +238,9 @@ for classname, clazz in parsed.classes.items() + parsed.structs.items():
       if '<' in prop['name'] or '<' in type_:
         print 'zz warning: ignoring getter/setter for templated class', classname + '::' + prop['name']
         continue
+      if ',' in prop['type']:
+        print 'zz ignoring things like FILE *stdin, *stdout, *stderr'
+        continue
       reference = type_ in classes # a raw struct or class as a prop means we need to work with a ref
       clazz['methods'].append({
         'getter': True,
@@ -558,6 +561,9 @@ def generate_class(generating_classname, classname, clazz): # TODO: deprecate ge
     mname = method['name']
     if classname_head + '::' + mname in ignored:
       print 'zz ignoring', mname
+      continue
+    if method['returns'] == '':
+      print 'zz ignoring a member function pointer!'
       continue
 
     params = method['parameters']
